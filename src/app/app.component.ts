@@ -2,6 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {Employee} from "./employee";
 import {EmployeeService} from "./employee.service";
 import {HttpErrorResponse} from "@angular/common/http";
+import {NgForm} from "@angular/forms";
 
 @Component({
   selector: 'app-root',
@@ -10,14 +11,21 @@ import {HttpErrorResponse} from "@angular/common/http";
 })
 export class AppComponent implements OnInit {
   public employees: Employee[];
+  public addEmp =[];
+  public updateEmp: Employee;
+  public deleteEmp: Employee;
 
   constructor(private employeeService: EmployeeService) {}
 
+  ngOnInit() {
+    this.getEmployees();
+  }
 
-  public getEmployee(): void{
+  public getEmployees(): void{
     this.employeeService.getEmployees().subscribe(
       (response: Employee[]) => {
         this.employees = response;
+        console.log(this.employees);
       },
       (error: HttpErrorResponse) => {
         alert(error.message);
@@ -25,7 +33,80 @@ export class AppComponent implements OnInit {
     );
   }
 
-  ngOnInit() {
-    this.getEmployee();
+  public onOpenModal(emp: any ,mode:string):void{
+    const container = window.document.getElementById('main-container')!
+    const button = document.createElement('button');
+    button.type= 'button';
+    button.style.display= 'none';
+    button.setAttribute('data-toggle','modal');
+    if (mode=== 'add'){
+      button.setAttribute('data-target','#addEmployeeModal');
+    }
+    if (mode=== 'update'){
+      this.updateEmp= emp;
+      button.setAttribute('data-target','#updateEmployeeModal');
+    }
+    if (mode=== 'delete'){
+      this.deleteEmp= emp;
+      button.setAttribute('data-target','#deleteEmployeeModal');
+    }
+    container.appendChild(button);
+    button.click();
   }
+
+  public addEmployee(addForm: NgForm): void{
+    const getEmp = window.document.getElementById('add-employee-form')!
+    getEmp.click();
+    this.employeeService.addEmployee(addForm.value).subscribe(
+      (response:Employee) => {
+        console.log(response);
+        this.getEmployees();
+        addForm.reset();
+      },
+      (error:HttpErrorResponse) => {
+        alert(error.message);
+        addForm.reset();
+      }
+    );
+  }
+
+  public updateEmployee(employee: Employee):void {
+    this.employeeService.updateEmployee(employee).subscribe(
+      (response:Employee) => {
+        console.log(response);
+        this.getEmployees();
+      },
+      (error: HttpErrorResponse) => {
+        alert(error.message);
+      }
+    );
+  }
+
+  public deleteEmployee (idEmp: number):void{
+    this.employeeService.deleteEmployee(idEmp).subscribe(
+      (response: void) => {
+        console.log(response);
+        this.getEmployees();
+      },
+      (error:HttpErrorResponse) => {
+        alert(error.message);
+      }
+    )
+  }
+
+  public searchEmployee(key:string):void {
+    console.log(key);
+    const results: Employee[]=[];
+    for (const employee of this.employees){
+      if (employee.name.toLowerCase().indexOf(key.toLowerCase()) !== -1
+      || employee.email.toLowerCase().indexOf(key.toLowerCase()) !== -1){
+        results.push(employee);
+      }
+    }
+    this.employees =results;
+    if (results.length === 0 || !key){
+      this.getEmployees();
+    }
+  }
+
 }
